@@ -15,7 +15,6 @@ pipeline {
         stage('Build') {
             steps {
                 // Build the project using Gradle
-                sh "chmod +x ./gradlew"
                 sh "./gradlew build"
             }
         }
@@ -23,21 +22,18 @@ pipeline {
         stage('Test') {
             steps {
                 // Run unit tests using Gradle
-                sh "chmod +x ./gradlew"
                 sh "./gradlew test"
             }
         }
 
-       stage('SonarQube Analysis') {
-    steps {
-        withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) { 
-            withSonarQubeEnv('sonar') { 
-                sh "chmod +x ./gradlew"  
-                sh "./gradlew  -Dsonar.login=$SONAR_TOKEN" 
+        stage('SonarQube Analysis') {
+            steps {
+                // Run SonarQube analysis
+                withSonarQubeEnv('sonar') { 
+                    sh "./gradlew sonarqube"  // تأكد من أن هذا الأمر مكتمل
+                }
             }
         }
-    }
-}
 
         stage('Build Docker Image') {
             steps {
