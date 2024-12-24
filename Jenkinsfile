@@ -28,14 +28,16 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('sonar') { // Replace 'sonar' with the correct SonarQube configuration name
-                    sh "chmod +x ./gradlew"
-                    sh "./gradlew sonarqube"
-                }
+       stage('SonarQube Analysis') {
+    steps {
+        withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) { 
+            withSonarQubeEnv('sonar') { 
+                sh "chmod +x ./gradlew"  
+                sh "./gradlew sonarqube -Dsonar.login=$SONAR_TOKEN" 
             }
         }
+    }
+}
 
         stage('Build Docker Image') {
             steps {
