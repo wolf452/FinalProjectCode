@@ -7,29 +7,25 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                // Pull the code from the main branch of the repository
                 git url: 'https://github.com/wolf452/FinalProjectCode.git', branch: 'main'
+            }
+        }
+
+        stage('Unit Test') {
+            steps {
+                sh "./gradlew test"
             }
         }
 
         stage('Build') {
             steps {
-                // Build the project using Gradle
                 sh "chmod +x gradlew"
                 sh "./gradlew build"
             }
         }
 
-        stage('Test') {
-            steps {
-                // Run unit tests using Gradle
-                sh "./gradlew test"
-            }
-        }
-
         stage('SonarQube Analysis') {
             steps {
-                // Run SonarQube analysis
                 withSonarQubeEnv('sonar') { 
                     sh "./gradlew sonarqube"
                 }
@@ -38,7 +34,6 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                // Build the Docker image with a specified tag
                 sh """
                 docker build -t $DOCKER_IMAGE .
                 """
@@ -48,7 +43,6 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
-                    // Use credentials to log in to Docker Hub and push the image
                     withCredentials([usernamePassword(credentialsId: 'Docker_hub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         sh 'docker login docker.io -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
                         sh 'docker push $DOCKER_IMAGE'
@@ -59,7 +53,6 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                // Apply the deployment configuration to the Kubernetes cluster
                 sh """
                 kubectl --kubeconfig=/home/ubuntu/jenkins/.kube/config apply -f $DEPLOYMENT_YAML
                 """
@@ -68,7 +61,6 @@ pipeline {
 
         stage('Post Action') {
             steps {
-                // Notify that the deployment was successful
                 echo "Deployment to Kubernetes completed successfully!"
             }
         }
@@ -76,11 +68,9 @@ pipeline {
 
     post {
         success {
-            // Message displayed on successful pipeline execution
             echo "Pipeline executed successfully."
         }
         failure {
-            // Message displayed on pipeline failure
             echo "Pipeline failed. Check the logs for errors."
         }
     }
