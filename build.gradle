@@ -2,6 +2,7 @@ plugins {
     id 'org.springframework.boot' version '2.6.3'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
+    id 'org.sonarqube' version '3.3' // إضافة ملحق SonarQube
 }
 
 group = 'com.example'
@@ -14,7 +15,7 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf' // Add this if using Thymeleaf
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf' // إذا كنت تستخدم Thymeleaf
     testImplementation('org.springframework.boot:spring-boot-starter-test')
     implementation 'org.springframework.boot:spring-boot-starter'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -22,4 +23,13 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+// تكوين إعدادات SonarQube
+sonarqube {
+    properties {
+        property "sonar.projectKey", "sonar-server"  
+        property "sonar.host.url", "http://3.89.115.52:9000/" 
+        property "sonar.login", "squ_2486b5019dcbe0e3e190cc5ae4e8ad9fae3688c3"  
+    }
 }
