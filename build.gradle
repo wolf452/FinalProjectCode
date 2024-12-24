@@ -10,15 +10,14 @@ version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '11'
 
 repositories {
-    mavenCentral()
+    mavenCentral() // مستودع Maven Central
 }
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf' // إذا كنت تستخدم Thymeleaf
-    testImplementation('org.springframework.boot:spring-boot-starter-test')
-    implementation 'org.springframework.boot:spring-boot-starter'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    implementation 'org.springframework.boot:spring-boot-starter'
 }
 
 test {
@@ -28,8 +27,9 @@ test {
 // تكوين إعدادات SonarQube
 sonarqube {
     properties {
-        property "sonar.projectKey", "sonar-server"  
-        property "sonar.host.url", "http://3.89.115.52:9000" 
-         
+        property "sonar.projectKey", "sonar-server"  // تأكد من تحديد key فريد للمشروع
+        property "sonar.host.url", "http://3.86.238.121:9000"   // تأكد من صحة الـ URL الخاص بـ SonarQube
+        
+       
     }
 }
