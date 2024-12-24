@@ -13,13 +13,14 @@ pipeline {
 
         stage('Unit Test') {
             steps {
+                sh "chmod +x gradlew"
                 sh "./gradlew test"
             }
         }
 
         stage('Build') {
             steps {
-                sh "chmod +x gradlew"
+                
                 sh "./gradlew build"
             }
         }
