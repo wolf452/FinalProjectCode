@@ -31,18 +31,29 @@ pipeline {
             steps {
                 // Run SonarQube analysis
                 withSonarQubeEnv('sonar') { 
-                    sh "./gradlew sonarqube"  // تأكد من أن هذا الأمر مكتمل
+                    sh "./gradlew sonarqube"
                 }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                // Build and push the Docker image
+                // Build the Docker image with a specified tag
                 sh """
                 docker build -t $DOCKER_IMAGE .
-                docker push $DOCKER_IMAGE
                 """
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    // Use credentials to log in to Docker Hub and push the image
+                    withCredentials([usernamePassword(credentialsId: 'Docker_hub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh 'docker login docker.io -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
+                        sh 'docker push $DOCKER_IMAGE'
+                    }
+                }
             }
         }
 
