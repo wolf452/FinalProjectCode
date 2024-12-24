@@ -15,6 +15,7 @@ pipeline {
         stage('Build') {
             steps {
                 // Build the project using Gradle
+                sh "chmod +x ./gradlew"
                 sh "./gradlew build"
             }
         }
@@ -22,6 +23,7 @@ pipeline {
         stage('Test') {
             steps {
                 // Run unit tests using Gradle
+                sh "chmod +x ./gradlew"
                 sh "./gradlew test"
             }
         }
@@ -29,6 +31,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonar') { // Replace 'sonar' with the correct SonarQube configuration name
+                    sh "chmod +x ./gradlew"
                     sh "./gradlew sonarqube"
                 }
             }
