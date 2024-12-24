@@ -2,7 +2,7 @@ plugins {
     id 'org.springframework.boot' version '2.6.3'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
     id 'java'
-    id 'org.sonarqube' version '3.3'  // إضافة SonarQube plugin
+    id 'org.sonarqube' version '3.3'  
 }
 
 
@@ -13,7 +13,7 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf' // إذا كنت تستخدم Thymeleaf
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf' 
     testImplementation('org.springframework.boot:spring-boot-starter-test')
     implementation 'org.springframework.boot:spring-boot-starter'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -26,9 +26,8 @@ test {
 // تكوين إعدادات SonarQube
 sonarqube {
     properties {
-        property "sonar.projectKey", "sonar-server"  // اسم المشروع الخاص بك
-        property "sonar.host.url", "http://3.86.238.121:9000"  // عنوان SonarQube
-        property "sonar.login", "squ_246da60afdc01f831865f05a29e51b0490d90133"  // يمكن استبداله بـ token إذا كنت تستخدم واحدًا
-       
+        property "sonar.projectKey", "sonar-server"  
+        property "sonar.host.url", "http://3.86.238.121:9000" 
+        property "sonar.login", "squ_246da60afdc01f831865f05a29e51b0490d90133"  
     }
 }
