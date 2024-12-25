@@ -74,22 +74,22 @@ pipeline {
                 }
             }
         }
+
         stage('Delay Before Ansible Playbook') {
             steps {
                 script {
                     echo "Waiting for 1 minute before proceeding..."
-                    sleep time: 5, unit: 'SECONDS'
+                    sleep time: 60, unit: 'SECONDS'  // Waiting for 1 minute
                     echo "Proceeding to run Ansible playbook..."
                 }
             }
         }
-        
 
         stage('Run Ansible') {
             steps {
                 dir('ansible') {
                     // Run the Ansible playbook using the generated inventory
-                    sh" mv /var/lib/jenkins/workspace/terr/terraform/ansible/inventory /var/lib/jenkins/workspace/terr/ansible"
+                    sh "mv /var/lib/jenkins/workspace/terr/terraform/ansible/inventory /var/lib/jenkins/workspace/terr/ansible"
                     ansiblePlaybook credentialsId: 'ansible-ssh-key', inventory: 'inventory', playbook: 'playbook.yml'
                 }
             }
