@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent { label 'jenkins-slave' }
 
     environment {
         DOCKER_IMAGE = 'docker.io/ahmedmaher07/project'
@@ -22,33 +22,17 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                echo "Running SonarQube analysis"
-                withSonarQubeEnv('sonar') { 
-                    sh "./gradlew sonarqube"
-                }
-            }
-        }
-
         stage('Build') {
             steps {
                 echo "Building the project with Gradle"
-                sh """
-            
-                ./gradlew build
-                echo "Listing the build artifacts:"
-                ls -l build/libs
-                """
+                sh "./gradlew build"
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 echo "Building Docker image: $DOCKER_IMAGE"
-                sh """
-                docker build -t $DOCKER_IMAGE .
-                """
+                sh "docker build -t $DOCKER_IMAGE ."
             }
         }
 
@@ -57,9 +41,10 @@ pipeline {
                 script {
                     withCredentials([usernamePassword(credentialsId: 'Docker_hub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         echo "Logging into Docker Hub"
-                        sh 'docker login docker.io -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
+                        sh "docker login docker.io -u $DOCKER_USERNAME -p $DOCKER_PASSWORD"
+                        
                         echo "Pushing Docker image to Docker Hub"
-                        sh 'docker push $DOCKER_IMAGE'
+                        sh "docker push $DOCKER_IMAGE"
                     }
                 }
             }
@@ -68,9 +53,7 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 echo "Deploying the application to Kubernetes"
-                sh """
-                kubectl --kubeconfig=/home/ubuntu/jenkins/.kube/config apply -f $DEPLOYMENT_YAML
-                """
+                sh "kubectl --kubeconfig=/home/ubuntu/jenkins/.kube/config apply -f $DEPLOYMENT_YAML"
             }
         }
     }
