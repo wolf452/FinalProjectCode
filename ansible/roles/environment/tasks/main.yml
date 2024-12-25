@@ -1,0 +1,8 @@
+- name: Add environment variables
+  lineinfile:
+    path: /etc/environment
+    line: "{{ item }}"
+  with_items:
+    - JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+    - SONAR_HOME=/opt/sonarqube
+    - PATH=$PATH:/opt/sonarqube/bin
