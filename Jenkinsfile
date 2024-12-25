@@ -14,45 +14,6 @@ pipeline {
             }
         }
 
-        stage('Unit Test') {
-            steps {
-                echo "Running unit tests"
-                sh "chmod +x gradlew"
-                sh "./gradlew test"
-            }
-        }
-
-        stage('Build') {
-            steps {
-                echo "Building the project with Gradle"
-                sh "./gradlew build"
-            }
-        }
-
-        stage('Login to Docker Hub') {
-            steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: 'Docker_hub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
-                    }
-                }
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                echo "Building Docker image: $DOCKER_IMAGE"
-                sh "docker build -t $DOCKER_IMAGE ."
-            }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    echo "Pushing Docker image to Docker Hub"
-                    sh "docker push $DOCKER_IMAGE"
-                }
-            }
         }
 
         stage('Deploy to Kubernetes') {
