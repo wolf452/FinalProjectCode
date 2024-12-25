@@ -18,14 +18,6 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('sonar') { 
-                    sh "./gradlew sonarqube"
-                }
-            }
-        }
-
         stage('Build') {
             steps {
                 sh "./gradlew build"
