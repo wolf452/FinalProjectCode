@@ -1,0 +1,11 @@
+- name: Configure Ubuntu EC2 Instance
+  hosts: web
+  become: true
+  roles:
+    #- git
+     #- common
+     #- docker
+     #- java
+     #- jenkins
+   - sonarqube
+     #- environment
