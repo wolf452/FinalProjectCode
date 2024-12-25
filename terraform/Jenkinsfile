@@ -1,1 +1,62 @@
-1
+pipeline {
+    agent any
+
+    environment {
+        TF_VAR_AWS_ACCESS_KEY = credentials('aws-access-key') // AWS access key from Jenkins credentials
+        TF_VAR_AWS_SECRET_KEY = credentials('aws-secret-key') // AWS secret key from Jenkins credentials
+        ANSIBLE_PRIVATE_KEY = credentials('ansible-ssh-key') // Private key for SSH access
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/wolf452/FinalProjectCode.git'
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                dir('terraform') {
+                    sh 'terraform init'
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                dir('terraform') {
+                    sh 'terraform apply -auto-approve'
+                }
+            }
+        }
+
+        stage('Get EC2 IP') {
+            steps {
+                dir('terraform') {
+                    script {
+                        def terraformOutput = sh(script: 'terraform output -json', returnStdout: true)
+                        def publicIp = readJSON(text: terraformOutput).ec2_public_ip.value
+                        dir('ansible') {
+                            writeFile file: 'inventory', text: "[web]\n${publicIp} ansible_user=ubuntu ansible_ssh_private_key_file=${env.ANSIBLE_PRIVATE_KEY}"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Run Ansible') {
+            steps {
+                dir('ansible') {
+                    ansiblePlaybook credentialsId: 'ansible-ssh-key', inventory: 'inventory', playbook: 'playbook.yml'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'inventory, terraform.tfstate', fingerprint: true
+            cleanWs()
+        }
+    }
+}
