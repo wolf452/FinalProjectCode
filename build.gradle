@@ -18,12 +18,17 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
 
 test {
     useJUnitPlatform()
 }
 
-// تكوين إعدادات SonarQube
+
 sonarqube {
     properties {
         property "sonar.projectKey", "sonar-server"  
