@@ -17,6 +17,7 @@ pipeline {
 
         stage('Build') {
             steps {
+                sh "chmod +x gradlew"
                 sh "./gradlew build"
                 sh 'ls -l build/libs'
             }
@@ -42,7 +43,7 @@ pipeline {
                     echo "Deploying application to Kubernetes"
                 }
                 sh """
-                kubectl --kubeconfig=/home/ubuntu/jenkins/.kube/config apply -f $DEPLOYMENT_YAML
+                kubectl --kubeconfig=/home/ahmed/.kube/config apply -f $DEPLOYMENT_YAML
                 """
             }
         }
