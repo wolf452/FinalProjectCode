@@ -14,8 +14,6 @@ pipeline {
             }
         }
 
-        }
-
         stage('Deploy to Kubernetes') {
             steps {
                 echo "Deploying the application to Kubernetes"
