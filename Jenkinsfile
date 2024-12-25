@@ -9,41 +9,68 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
+                echo "Cloning the source code from GitHub"
                 git url: 'https://github.com/wolf452/FinalProjectCode.git', branch: 'main'
             }
         }
 
-      
+        stage('Unit Test') {
+            steps {
+                echo "Running unit tests"
+                sh "chmod +x gradlew"
+                sh "./gradlew test"
+            }
+        }
 
-       
-        
+        stage('SonarQube Analysis') {
+            steps {
+                echo "Running SonarQube analysis"
+                withSonarQubeEnv('sonar') { 
+                    sh "./gradlew sonarqube"
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                echo "Building the project with Gradle"
+                sh """
+            
+                ./gradlew build
+                echo "Listing the build artifacts:"
+                ls -l build/libs
+                """
+            }
+        }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    echo "Building Docker image for $DOCKER_IMAGE"
-                }
+                echo "Building Docker image: $DOCKER_IMAGE"
                 sh """
                 docker build -t $DOCKER_IMAGE .
                 """
             }
         }
 
-       
-        stage('Deploy to Kubernetes') {
+        stage('Push Docker Image') {
             steps {
                 script {
-                    echo "Deploying application to Kubernetes"
+                    withCredentials([usernamePassword(credentialsId: 'Docker_hub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        echo "Logging into Docker Hub"
+                        sh 'docker login docker.io -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
+                        echo "Pushing Docker image to Docker Hub"
+                        sh 'docker push $DOCKER_IMAGE'
+                    }
                 }
-                sh """
-                kubectl --kubeconfig=/home/jenkins/.kube/config apply -f $DEPLOYMENT_YAML
-                """
             }
         }
 
-        stage('Post Action') {
+        stage('Deploy to Kubernetes') {
             steps {
-                echo "Deployment to Kubernetes completed successfully!"
+                echo "Deploying the application to Kubernetes"
+                sh """
+                kubectl --kubeconfig=/home/jenkins/.kube/config apply -f $DEPLOYMENT_YAML
+                """
             }
         }
     }
@@ -53,7 +80,7 @@ pipeline {
             echo "Pipeline executed successfully."
         }
         failure {
-            echo "Pipeline failed. Check the logs for errors."
+            echo "Pipeline failed. Please check the logs for details."
         }
     }
 }
