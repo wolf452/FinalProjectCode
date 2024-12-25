@@ -1,4 +1,4 @@
-FROM openjdk:17-jre-slim
+FROM adoptopenjdk:11-jre-hotspot
 
 WORKDIR /app
 
