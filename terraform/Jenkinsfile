@@ -23,10 +23,6 @@ pipeline {
                     sh 'aws configure set aws_access_key_id ${TF_VAR_AWS_ACCESS_KEY}'
                     sh 'aws configure set aws_secret_access_key ${TF_VAR_AWS_SECRET_KEY}'
                     sh 'aws configure set region ${AWS_DEFAULT_REGION}'
-                    
-                    // Optional: Print the access and secret key for debugging (use cautiously)
-                    echo "AWS Access Key: ${TF_VAR_AWS_ACCESS_KEY}"
-                    echo "AWS Secret Key: ${TF_VAR_AWS_SECRET_KEY}"
                 }
             }
         }
@@ -42,7 +38,13 @@ pipeline {
         stage('Terraform Apply') {
             steps {
                 dir('terraform') {
-                    sh 'terraform apply -auto-approve'
+                    // Run Terraform apply and ensure it completes successfully
+                    script {
+                        def applyResult = sh(script: 'terraform apply -auto-approve', returnStatus: true)
+                        if (applyResult != 0) {
+                            error "Terraform apply failed"
+                        }
+                    }
                 }
             }
         }
@@ -53,8 +55,14 @@ pipeline {
                     script {
                         // Get the EC2 instance's public IP from Terraform output
                         def terraformOutput = sh(script: 'terraform output -json', returnStdout: true)
-                        def publicIp = readJSON(text: terraformOutput).ec2_public_ip.value
-                        
+                        def outputJson = readJSON(text: terraformOutput)
+
+                        // Check if the public IP exists in the output
+                        def publicIp = outputJson?.ec2_public_ip?.value
+                        if (!publicIp) {
+                            error "EC2 public IP not found in Terraform output."
+                        }
+
                         // Prepare the Ansible inventory file with the EC2 instance IP and SSH private key
                         dir('ansible') {
                             writeFile file: 'inventory', text: "[web]\n${publicIp} ansible_user=ubuntu ansible_ssh_private_key_data=${env.ANSIBLE_PRIVATE_KEY}"
