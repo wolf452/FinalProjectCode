@@ -4,7 +4,7 @@ pipeline {
     environment {
         TF_VAR_AWS_ACCESS_KEY = credentials('aws-access-key') // AWS access key from Jenkins credentials
         TF_VAR_AWS_SECRET_KEY = credentials('aws-secret-key') // AWS secret key from Jenkins credentials
-        ANSIBLE_PRIVATE_KEY = credentials('ansible-ssh-key') // Private key for SSH access
+        ANSIBLE_PRIVATE_KEY = credentials('ansible-ssh-key') // Secret text with SSH private key
         AWS_DEFAULT_REGION = 'us-east-1'
         TF_LOG = 'DEBUG'
     }
@@ -36,10 +36,13 @@ pipeline {
             steps {
                 dir('terraform') {
                     script {
+                        // Get the EC2 instance's public IP from Terraform output
                         def terraformOutput = sh(script: 'terraform output -json', returnStdout: true)
                         def publicIp = readJSON(text: terraformOutput).ec2_public_ip.value
+                        
+                        // Prepare the Ansible inventory file with the EC2 instance IP and SSH private key
                         dir('ansible') {
-                            writeFile file: 'inventory', text: "[web]\n${publicIp} ansible_user=ubuntu ansible_ssh_private_key_file=${env.ANSIBLE_PRIVATE_KEY}"
+                            writeFile file: 'inventory', text: "[web]\n${publicIp} ansible_user=ubuntu ansible_ssh_private_key_data=${env.ANSIBLE_PRIVATE_KEY}"
                         }
                     }
                 }
@@ -49,6 +52,7 @@ pipeline {
         stage('Run Ansible') {
             steps {
                 dir('ansible') {
+                    // Run the Ansible playbook using the generated inventory
                     ansiblePlaybook credentialsId: 'ansible-ssh-key', inventory: 'inventory', playbook: 'playbook.yml'
                 }
             }
@@ -57,8 +61,9 @@ pipeline {
 
     post {
         always {
+            // Archive the inventory and terraform state files for later inspection
             archiveArtifacts artifacts: 'inventory, terraform.tfstate', fingerprint: true
-            cleanWs()
+            cleanWs() // Clean the workspace after the job completes
         }
     }
 }
