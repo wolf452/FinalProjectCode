@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        TF_VAR_AWS_ACCESS_KEY = credentials('aws-access-key') // AWS access key from Jenkins credentials
-        TF_VAR_AWS_SECRET_KEY = credentials('aws-secret-key') // AWS secret key from Jenkins credentials
-        ANSIBLE_PRIVATE_KEY = credentials('ansible-ssh-key') // Secret text with SSH private key
+        TF_VAR_AWS_ACCESS_KEY = credentials('aws-access-key')  // AWS access key from Jenkins credentials
+        TF_VAR_AWS_SECRET_KEY = credentials('aws-secret-key')  // AWS secret key from Jenkins credentials
+        ANSIBLE_PRIVATE_KEY = credentials('ansible-ssh-key')  // Secret text with SSH private key
         AWS_DEFAULT_REGION = 'us-east-1'
         TF_LOG = 'DEBUG'
     }
@@ -78,7 +78,7 @@ pipeline {
         always {
             // Archive the inventory and terraform state files for later inspection
             archiveArtifacts artifacts: 'inventory, terraform.tfstate', fingerprint: true
-            cleanWs() // Clean the workspace after the job completes
+            cleanWs()  // Clean the workspace after the job completes
         }
     }
 }
