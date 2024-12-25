@@ -18,7 +18,7 @@ spec:
       - name: my-app-container
         image: docker.io/ahmedmaher07/project
         ports:
-        - containerPort: 8080
+        - containerPort: 8081
 
 ---
 apiVersion: v1
