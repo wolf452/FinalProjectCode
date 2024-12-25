@@ -15,14 +15,7 @@ pipeline {
 
       
 
-        stage('Build') {
-            steps {
-                sh "chmod +x gradlew"
-                sh "./gradlew build"
-                sh 'ls -l build/libs'
-            }
-        }
-
+       
         
 
         stage('Build Docker Image') {
