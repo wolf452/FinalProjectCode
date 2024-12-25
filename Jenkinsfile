@@ -36,7 +36,7 @@ pipeline {
                     echo "Deploying application to Kubernetes"
                 }
                 sh """
-                kubectl --kubeconfig=/home/ahmed/.kube/config apply -f $DEPLOYMENT_YAML
+                kubectl --kubeconfig=/.kube/config apply -f $DEPLOYMENT_YAML
                 """
             }
         }
