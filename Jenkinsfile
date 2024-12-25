@@ -5,7 +5,7 @@ pipeline {
         DEPLOYMENT_YAML = 'deployment.yaml'
     }
     
-
+    stages {
         stage('Deploy to Kubernetes') {
             steps {
                 sh """
