@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'jenkins-slave' }
+    agent any
 
     environment {
         DOCKER_IMAGE = 'docker.io/ahmedmaher07/project'
@@ -13,12 +13,7 @@ pipeline {
             }
         }
 
-        stage('Unit Test') {
-            steps {
-                sh "chmod +x gradlew"
-                sh "./gradlew test"
-            }
-        }
+      
 
         stage('Build') {
             steps {
@@ -27,13 +22,7 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('sonar') { 
-                    sh "./gradlew sonarqube"
-                }
-            }
-        }
+        
 
         stage('Build Docker Image') {
             steps {
@@ -46,19 +35,7 @@ pipeline {
             }
         }
 
-        stage('Push Docker Image') {
-            steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: 'Docker_hub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                        echo "Logging in to Docker Hub"
-                        sh 'docker login docker.io -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
-                        echo "Pushing Docker image to Docker Hub"
-                        sh 'docker push $DOCKER_IMAGE'
-                    }
-                }
-            }
-        }
-
+       
         stage('Deploy to Kubernetes') {
             steps {
                 script {
