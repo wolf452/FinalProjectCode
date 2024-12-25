@@ -54,18 +54,21 @@ pipeline {
                 dir('terraform') {
                     script {
                         // Get the EC2 instance's public IP from Terraform output
-                        def terraformOutput = sh(script: 'terraform output -json', returnStdout: true)
+                        def terraformOutput = sh(script: 'terraform output -json', returnStdout: true).trim()
                         def outputJson = readJSON(text: terraformOutput)
 
                         // Check if the public IP exists in the output
-                        def publicIp = outputJson?.ec2_public_ip?.value
+                        def publicIp = outputJson?.ec2_public_ips?.value
                         if (!publicIp) {
                             error "EC2 public IP not found in Terraform output."
                         }
 
+                        // Print the public IP for debugging
+                        echo "EC2 Public IP: ${publicIp}"
+
                         // Prepare the Ansible inventory file with the EC2 instance IP and SSH private key
                         dir('ansible') {
-                            writeFile file: 'inventory', text: "[web]\n${publicIp} ansible_user=ubuntu ansible_ssh_private_key_data=${env.ANSIBLE_PRIVATE_KEY}"
+                            writeFile file: 'inventory', text: "[web]\n${publicIp} ansible_user=ubuntu ansible_ssh_private_key_file=${env.ANSIBLE_PRIVATE_KEY}"
                         }
                     }
                 }
@@ -85,7 +88,7 @@ pipeline {
     post {
         always {
             // Archive the inventory and terraform state files for later inspection
-            archiveArtifacts artifacts: 'inventory, terraform.tfstate', fingerprint: true
+            archiveArtifacts artifacts: 'ansible/inventory, terraform/terraform.tfstate', fingerprint: true
             cleanWs()  // Clean the workspace after the job completes
         }
     }
