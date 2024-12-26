@@ -97,13 +97,13 @@ pipeline {
         stage('Run Ansible Playbook') {
             steps {
                 dir("${ANSIBLE_DIR}") {
-                    withCredentials([sshUserPrivateKey(credentialsId: 'ansible-ssh-key', keyFileVariable: 'SSH_PRIVATE_KEY')]) {
+                     withCredentials([file(credentialsId: 'privat', variable: 'FILE')] {
                         script {
                             // Ensure the key has the correct permissions
-                            sh 'chmod 400 $SSH_PRIVATE_KEY'
+                            sh 'chmod 400 $FILE'
                             // Run the Ansible playbook
                             sh '''
-                            ansible-playbook -K -i ${INVENTORY_FILE} playbook.yml --private-key=/var/lib/jenkins/workspace/terr/ansible/ivolve.pem --user=ubuntu
+                            ansible-playbook -K -i ${INVENTORY_FILE} playbook.yml --private-key $FILE --user=ubuntu
                             '''
                         }
                     }
