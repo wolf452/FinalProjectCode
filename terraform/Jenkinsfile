@@ -16,39 +16,10 @@ pipeline {
                             env.TF_VAR_AWS_ACCESS_KEY = env.AWS_ACCESS_KEY_ID
                             env.TF_VAR_AWS_SECRET_KEY = env.AWS_SECRET_ACCESS_KEY
                             env.TF_VAR_ANSIBLE_PRIVATE_KEY = credentials('ansible-ssh-key')
+
+                            // Run Terraform Init
                             sh 'terraform init'
                         }
-                    }
-                }
-            }
-        }
-
-        stage('Terraform Apply') {
-            steps {
-                dir('terraform') {
-                    withCredentials([aws(credentialsId: 'aws-cred', region: 'us-east-1')]) {
-                        sh 'terraform apply -auto-approve'
-                    }
-                }
-            }
-        }
-
-        stage('Sleep for 3 Minutes') {
-            steps {
-                script {
-                    echo 'Waiting for resources to initialize...'
-                    sleep(time: 3, unit: 'MINUTES')
-                }
-            }
-        }
-
-        stage('Get EC2 IP') {
-            steps {
-                dir('terraform') {
-                    script {
-                        // Fetch the correct EC2 public IP output from Terraform
-                        def ec2_ip = sh(script: 'terraform output -raw ec2_public_ips', returnStdout: true).trim()
-                        
                     }
                 }
             }
@@ -57,7 +28,8 @@ pipeline {
         stage('Run Ansible') {
             steps {
                 dir('/var/lib/jenkins/workspace/terr/ansible') {
-                    sh 'ansible-playbook -i /var/lib/jenkins/terr/ansible/inventory playbook.yml'
+                    // Ensure that ansible-playbook command is running correctly
+                    sh 'ansible-playbook -i /var/lib/jenkins/workspace/terr/ansible/inventory playbook.yml'
                 }
             }
         }
@@ -66,7 +38,7 @@ pipeline {
     post {
         always {
             // Archive inventory and terraform state files
-            archiveArtifacts artifacts: 'ansible/inventory, terraform/terraform.tfstate', fingerprint: true
+            archiveArtifacts artifacts: '**/ansible/inventory, **/terraform/terraform.tfstate', fingerprint: true
             cleanWs()  // Clean workspace after execution
         }
     }
