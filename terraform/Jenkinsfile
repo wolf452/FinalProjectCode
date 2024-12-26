@@ -6,25 +6,25 @@ pipeline {
         BACKEND_DIR = 'terraform/modules/backend'
         ANSIBLE_DIR = 'terr/ansible'
         INVENTORY_FILE = 'inventory'
-        AWS_ACCESS_KEY_ID = credentials('aws-access-key')
-        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key')  // Use the correct credentials
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')  // Use the correct credentials
         AWS_REGION = 'us-east-1'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/wolf452/FinalProjectCode.git'
+                 git branch: 'main', url: 'https://github.com/wolf452/FinalProjectCode.git'
             }
         }
 
         stage('Terraform Init') {
             steps {
                 dir("${env.TERRAFORM_DIR}") {
-                    withCredentials([aws(credentialsId: 'aws-cred', region: 'us-east-1')]) {
+                    withCredentials([aws(credentialsId: 'aws-cred')]) {
                         script {
-                            env.TF_VAR_AWS_ACCESS_KEY = env.aws-access-key
-                            env.TF_VAR_AWS_SECRET_KEY = env.aws-secret-key
+                            env.TF_VAR_AWS_ACCESS_KEY = env.AWS_ACCESS_KEY_ID
+                            env.TF_VAR_AWS_SECRET_KEY = env.AWS_SECRET_ACCESS_KEY
                         }
                         sh 'terraform init -force-copy'
                     }
@@ -83,7 +83,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Run Ansible Playbook') {
             steps {
                 dir("${ANSIBLE_DIR}") {
