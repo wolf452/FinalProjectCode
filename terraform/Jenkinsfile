@@ -20,10 +20,9 @@ pipeline {
             steps {
                 dir('terraform') {
                     sh 'terraform init'
-                    script {
-                        def applyResult = sh(script: 'terraform apply -auto-approve', returnStatus: true)
-                        if (applyResult != 0) error "Terraform apply failed"
+                    sh 'terraform apply -auto-approve'
 
+                    script {
                         def terraformOutput = sh(script: 'terraform output -json', returnStdout: true).trim()
                         def outputJson = readJSON(text: terraformOutput)
                         def publicIp = outputJson?.ec2_public_ips?.value
@@ -33,9 +32,16 @@ pipeline {
                         echo "EC2 Public IP: ${publicIp}"
 
                         dir('ansible') {
-                            writeFile file: 'inventory', text: "[web]\n${publicIp} ansible_user=ubuntu ansible_ssh_private_key_file=/var/lib/jenkins/workspace/terr/ansible/ansible-keyproj.pem"
+                            writeFile file: 'inventory', text: "[web]\n${publicIp} ansible_user=ubuntu ansible_ssh_private_key_file=${ANSIBLE_PRIVATE_KEY}"
                             echo "Inventory content:"
                             sh 'cat inventory'
+
+                            script {
+                                def inventoryContent = readFile 'inventory'
+                                if (!inventoryContent.contains('[web]')) {
+                                    error "Invalid inventory file. Host group [web] not found."
+                                }
+                            }
                         }
                     }
                 }
@@ -45,9 +51,9 @@ pipeline {
         stage('Run Ansible') {
             steps {
                 dir('ansible') {
-                    sh 'chmod 600 /var/lib/jenkins/workspace/terr/ansible/ansible-keyproj.pem'
+                    sh 'chmod 600 ${ANSIBLE_PRIVATE_KEY}'
                     sh 'ansible-inventory -i inventory --list'
-                    ansiblePlaybook credentialsId: 'ansible-ssh-key', inventory: 'inventory', playbook: 'playbook.yml'
+                    ansiblePlaybook inventory: 'inventory', playbook: 'playbook.yml', credentialsId: 'ansible-ssh-key', extras: "-u ubuntu --private-key=${ANSIBLE_PRIVATE_KEY}"
                 }
             }
         }
@@ -55,6 +61,7 @@ pipeline {
 
     post {
         always {
+            sh 'rm -f ${ANSIBLE_PRIVATE_KEY}'
             archiveArtifacts artifacts: '**/ansible/inventory, terraform/terraform.tfstate', fingerprint: true
             cleanWs()
         }
