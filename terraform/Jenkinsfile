@@ -80,7 +80,7 @@ pipeline {
         stage('Run Ansible') {
             steps {
                 dir('ansible') {
-                    sh 'chmod 600 ${ANSIBLE_PRIVATE_KEY}'
+                   
                     sh 'ansible-inventory -i inventory --list'
                     ansiblePlaybook inventory: 'inventory', playbook: 'playbook.yml', extras: "-u ubuntu --private-key=/var/lib/jenkins/workspace/terr/ansible/ansible-keyproj.pem"
                 }
