@@ -46,8 +46,10 @@ pipeline {
             steps {
                 dir('terraform') {
                     script {
-                        def ec2_ip = sh(script: 'terraform output -raw ec2_public_ip', returnStdout: true).trim()
+                        // Fetch the correct EC2 public IP output from Terraform
+                        def ec2_ip = sh(script: 'terraform output -raw ec2_public_ips', returnStdout: true).trim()
                         
+                        // Write the dynamic inventory for Ansible
                         writeFile file: 'inventory', text: """
                         [web]
                         ${ec2_ip} ansible_user=ubuntu ansible_ssh_private_key_file=${env.ANSIBLE_PRIVATE_KEY}
@@ -68,8 +70,9 @@ pipeline {
 
     post {
         always {
+            // Archive inventory and terraform state files
             archiveArtifacts artifacts: 'inventory, terraform/terraform.tfstate', fingerprint: true
-            cleanWs()
+            cleanWs()  // Clean workspace after execution
         }
     }
 }
