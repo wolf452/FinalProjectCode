@@ -4,7 +4,7 @@ pipeline {
     environment {
         TERRAFORM_DIR = 'terraform'
         BACKEND_DIR = 'terraform'
-        ANSIBLE_DIR = 'terr/ansible'  // تأكد أن هذا المسار صحيح
+        ANSIBLE_DIR = 'terr/ansible'
         INVENTORY_FILE = 'inventory'
         AWS_ACCESS_KEY_ID = credentials('aws-access-key')  // Use the correct credentials
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')  // Use the correct credentials
@@ -76,7 +76,7 @@ pipeline {
             steps {
                 dir("${ANSIBLE_DIR}") {
                     script {
-                        // تحديث ملف inventroy باستخدام عنوان الـ IP العام
+                        // تحديث محتوى ملف inventory باستخدام عنوان الـ IP العام الذي تم الحصول عليه
                         def inventoryContent = "[ec2]\n${env.PUBLIC_IP} ansible_user=ubuntu\n"
                         writeFile file: "${env.INVENTORY_FILE}", text: inventoryContent
                     }
@@ -101,7 +101,7 @@ pipeline {
                         script {
                             // Ensure the key has the correct permissions
                             sh 'chmod 400 $SSH_PRIVATE_KEY'
-                            // Run the Ansible playbook
+                            // Run the Ansible playbook with the specified playbook file
                             sh '''
                             ansible-playbook -K -i ${INVENTORY_FILE} playbook.yml --private-key $SSH_PRIVATE_KEY
                             '''
