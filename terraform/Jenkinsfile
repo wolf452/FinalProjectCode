@@ -12,6 +12,12 @@ pipeline {
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/wolf452/FinalProjectCode.git'
+            }
+        }
+
         stage('Terraform Init') {
             steps {
                 dir("${env.TERRAFORM_DIR}") {
@@ -19,8 +25,9 @@ pipeline {
                         script {
                             env.TF_VAR_AWS_ACCESS_KEY = env.aws-access-key
                             env.TF_VAR_AWS_SECRET_KEY = env.aws-secret-key
-                            
-                    sh 'terraform init -force-copy'
+                        }
+                        sh 'terraform init -force-copy'
+                    }
                 }
             }
         }
