@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/AbdallahHesham44/CloudDevOpsProject.git'
+                git branch: 'main', url: 'https://github.com/wolf452/FinalProjectCode.git'
             }
         }
 
@@ -15,9 +15,7 @@ pipeline {
                         script {
                             env.TF_VAR_AWS_ACCESS_KEY = env.AWS_ACCESS_KEY_ID
                             env.TF_VAR_AWS_SECRET_KEY = env.AWS_SECRET_ACCESS_KEY
-                            env.TF_VAR_ ANSIBLE_PRIVATE_KEY = credentials('ansible-ssh-key') 
-
-
+                            env.TF_VAR_ANSIBLE_PRIVATE_KEY = credentials('ansible-ssh-key')
                             sh 'terraform init'
                         }
                     }
@@ -48,21 +46,16 @@ pipeline {
             steps {
                 dir('terraform') {
                     script {
-                        //def ec2_ip = sh(script: 'terraform output -raw ec2_public_ip', returnStdout: true).trim()
+                        def ec2_ip = sh(script: 'terraform output -raw ec2_public_ip', returnStdout: true).trim()
                         
-                dir('/var/lib/jenkins/workspace/terr/ansible'){
-                    // Create Ansible inventory file dynamically
-                    writeFile file: 'inventory', text: """
-                   
-                    [web]\n${publicIp} ansible_user=ubuntu ansible_ssh_private_key_file=${ansible-ssh-key}
-                        
-                    """                 
+                        writeFile file: 'inventory', text: """
+                        [web]
+                        ${ec2_ip} ansible_user=ubuntu ansible_ssh_private_key_file=${env.ANSIBLE_PRIVATE_KEY}
+                        """
                     }
-}
                 }
             }
         }
-}
 
         stage('Run Ansible') {
             steps {
