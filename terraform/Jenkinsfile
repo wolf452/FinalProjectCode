@@ -6,7 +6,7 @@ pipeline {
         AWS_ACCESS_KEY_ID = credentials('aws-access-key')  // Use the correct credentials
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')  // Use the correct credentials
         AWS_REGION = 'us-east-1'
-        FILE = 'path/to/private-key-file'  // Define the path to your private key file
+          // Define the path to your private key file
     }
 
     stages {
