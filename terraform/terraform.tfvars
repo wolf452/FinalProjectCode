@@ -31,7 +31,7 @@ security_group_rules = [
   }
 ]
 ami_id               = "ami-0e2c8caa4b6378d8c"
-key_name             = "ansible.key-final"
+key_name             = "ivolve"
 
 instance_type        = "t2.micro"
 ec2_name             = "ivolve"
