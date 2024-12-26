@@ -29,7 +29,7 @@ pipeline {
                         // Capture Terraform output
                         def terraformOutput = sh(script: 'terraform output -json', returnStdout: true).trim()
                         def outputJson = readJSON(text: terraformOutput)
-                        
+
                         // Extract public IP and public DNS from the output
                         def publicIp = outputJson?.ec2_public_ips?.value
                         def publicDns = outputJson?.ec2_public_dns?.value
@@ -46,7 +46,7 @@ pipeline {
                             // Write the public DNS to the inventory file
                             writeFile file: 'inventory', text: "[web]\n${publicDns} ansible_user=ubuntu"
 
-                            // Print inventory content
+                            // Print inventory content for verification
                             echo "Inventory content:"
                             sh 'cat inventory'
 
