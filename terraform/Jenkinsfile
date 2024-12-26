@@ -49,11 +49,6 @@ pipeline {
                         // Fetch the correct EC2 public IP output from Terraform
                         def ec2_ip = sh(script: 'terraform output -raw ec2_public_ips', returnStdout: true).trim()
                         
-                        // Write the dynamic inventory for Ansible in the correct directory
-                        sh '''
-                            cd /var/lib/jenkins/workspace/terr/ansible
-                            echo "[web]\n${ec2_ip} ansible_user=ubuntu ansible_ssh_private_key_file=${env.ANSIBLE_PRIVATE_KEY}" >> /var/lib/jenkins/workspace/terr/ansible/inventory
-                        '''
                     }
                 }
             }
@@ -62,7 +57,7 @@ pipeline {
         stage('Run Ansible') {
             steps {
                 dir('/var/lib/jenkins/workspace/terr/ansible') {
-                    ansiblePlaybook credentialsId: 'ansible-ssh-key', inventory: 'inventory', playbook: 'playbook.yml'
+                    sh 'ansible-playbook -i inventory playbook
                 }
             }
         }
