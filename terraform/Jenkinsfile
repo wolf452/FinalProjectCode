@@ -5,7 +5,6 @@ pipeline {
         TERRAFORM_DIR = 'terraform'
         BACKEND_DIR = 'terraform'
         ANSIBLE_DIR = '../terr/ansible'
-        INVENTORY_FILE = 'inventory'
         AWS_ACCESS_KEY_ID = credentials('aws-access-key')  // Use the correct credentials
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')  // Use the correct credentials
         AWS_REGION = 'us-east-1'
@@ -16,20 +15,7 @@ pipeline {
             steps {
                 git branch: 'main', url: 'https://github.com/wolf452/FinalProjectCode.git'
             }
-        }
-
-        
-
-        stage('Delay Before Ansible Playbook') {
-            steps {
-                script {
-                    echo "Waiting for 1 minute before proceeding..."
-                    sleep time: 1, unit: 'SECONDS'
-                    echo "Proceeding to run Ansible playbook..."
-                }
-            }
-        }
-
+       
         stage('Run Ansible Playbook') {
             steps {
                 dir("${ANSIBLE_DIR}") {
@@ -39,7 +25,7 @@ pipeline {
                             sh 'chmod 400 $FILE'
                             // Run the Ansible playbook
                             sh '''
-                            ansible-playbook -K -i ${INVENTORY_FILE} playbook.yml  
+                            ansible-playbook -K -i inventory playbook.yml  
                             '''
                         }
                     }
