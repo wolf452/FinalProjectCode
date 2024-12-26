@@ -2,11 +2,11 @@ pipeline {
     agent any
 
     environment {
-        TF_VAR_AWS_ACCESS_KEY = credentials('aws-access-key')  // AWS access key from Jenkins credentials
-        TF_VAR_AWS_SECRET_KEY = credentials('aws-secret-key')  // AWS secret key from Jenkins credentials
-        ANSIBLE_PRIVATE_KEY = credentials('ansible-ssh-key')  // Secret text with SSH private key
-        AWS_DEFAULT_REGION = 'us-east-1'
-        TF_LOG = 'DEBUG'
+        TF_VAR_AWS_ACCESS_KEY = credentials('aws-access-key') 
+        TF_VAR_AWS_SECRET_KEY = credentials('aws-secret-key') 
+        ANSIBLE_PRIVATE_KEY = credentials('ansible-ssh-key') 
+        AWS_DEFAULT_REGION = 'us-east-1' 
+        TF_LOG = 'DEBUG' 
     }
 
     stages {
@@ -19,7 +19,6 @@ pipeline {
         stage('Configure AWS CLI') {
             steps {
                 script {
-                    // Configure AWS CLI with the access and secret keys
                     sh 'aws configure set aws_access_key_id ${TF_VAR_AWS_ACCESS_KEY}'
                     sh 'aws configure set aws_secret_access_key ${TF_VAR_AWS_SECRET_KEY}'
                     sh 'aws configure set region ${AWS_DEFAULT_REGION}'
@@ -38,7 +37,6 @@ pipeline {
         stage('Terraform Apply') {
             steps {
                 dir('terraform') {
-                    // Run Terraform apply and ensure it completes successfully
                     script {
                         def applyResult = sh(script: 'terraform apply -auto-approve', returnStatus: true)
                         if (applyResult != 0) {
@@ -53,20 +51,16 @@ pipeline {
             steps {
                 dir('terraform') {
                     script {
-                        // Get the EC2 instance's public IP from Terraform output
                         def terraformOutput = sh(script: 'terraform output -json', returnStdout: true).trim()
                         def outputJson = readJSON(text: terraformOutput)
-
-                        // Check if the public IP exists in the output
                         def publicIp = outputJson?.ec2_public_ips?.value
+
                         if (!publicIp) {
                             error "EC2 public IP not found in Terraform output."
                         }
 
-                        // Print the public IP for debugging
                         echo "EC2 Public IP: ${publicIp}"
 
-                        // Prepare the Ansible inventory file with the EC2 instance IP and SSH private key
                         dir('ansible') {
                             writeFile file: 'inventory', text: "[web]\n${publicIp} ansible_user=ubuntu ansible_ssh_private_key_file=/var/lib/jenkins/workspace/terr/ansible/ansible-keyproj.pem"
                         }
@@ -79,7 +73,7 @@ pipeline {
             steps {
                 script {
                     echo "Waiting for 1 minute before proceeding..."
-                    sleep time: 60, unit: 'SECONDS'  // Waiting for 1 minute
+                    sleep time: 60, unit: 'SECONDS'
                     echo "Proceeding to run Ansible playbook..."
                 }
             }
@@ -88,8 +82,7 @@ pipeline {
         stage('Run Ansible') {
             steps {
                 dir('ansible') {
-                    // Run the Ansible playbook using the generated inventory
-                   sh "mv /var/lib/jenkins/workspace/terr/terraform/ansible/inventory  /var/lib/jenkins/workspace/terr/ansible"
+                    sh 'chmod 600 /var/lib/jenkins/workspace/terr/ansible/ansible-keyproj.pem'
                     ansiblePlaybook credentialsId: 'ansible-ssh-key', inventory: 'inventory', playbook: 'playbook.yml'
                 }
             }
@@ -98,9 +91,8 @@ pipeline {
 
     post {
         always {
-            // Archive the inventory and terraform state files for later inspection
             archiveArtifacts artifacts: 'ansible/inventory, terraform/terraform.tfstate', fingerprint: true
-            cleanWs()  // Clean the workspace after the job completes
+            cleanWs()
         }
     }
 }
