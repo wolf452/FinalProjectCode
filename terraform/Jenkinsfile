@@ -49,12 +49,20 @@ pipeline {
             }
         }
 
+        stage('Wait for Instance to be Ready') {
+            steps {
+                echo 'Waiting for EC2 Instance to be ready...'
+                sleep time: 100, unit: 'SECONDS' // ينتظر 60 ثانية
+                echo 'Sleep complete. Proceeding to Ansible execution.'
+            }
+        }
+
         stage('Run Ansible') {
             steps {
                 dir('ansible') {
                     sh 'chmod 600 ${ANSIBLE_PRIVATE_KEY}'
                     sh 'ansible-inventory -i inventory --list'
-                    ansiblePlaybook inventory: 'inventory', playbook: 'playbook.yml', credentialsId: 'ansible-ssh-key', extras: "-u ubuntu --private-key= /var/lib/jenkins/workspace/terr/ansible/ansible-keyproj.pem"
+                    ansiblePlaybook inventory: 'inventory', playbook: 'playbook.yml', credentialsId: 'ansible-ssh-key', extras: "-u ubuntu --private-key=/var/lib/jenkins/workspace/terr/ansible/ansible-keyproj.pem"
                 }
             }
         }
