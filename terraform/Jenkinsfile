@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         TERRAFORM_DIR = 'terraform'
-        BACKEND_DIR = 'terraform/modules/backend'
+        BACKEND_DIR = 'terraform/backend'
         ANSIBLE_DIR = 'terr/ansible'
         INVENTORY_FILE = 'inventory'
         AWS_ACCESS_KEY_ID = credentials('aws-access-key')  // Use the correct credentials
