@@ -32,7 +32,7 @@ pipeline {
                         echo "EC2 Public IP: ${publicIp}"
 
                         dir('ansible') {
-                            writeFile file: 'inventory', text: "[web]\n${publicIp} ansible_user=ubuntu ansible_ssh_private_key_file=${ANSIBLE_PRIVATE_KEY}"
+                            writeFile file: 'inventory', text: "[web]\n${publicIp} ansible_user=ubuntu "
                             echo "Inventory content:"
                             sh 'cat inventory'
                             sh "cp /var/lib/jenkins/workspace/terr/terraform/ansible/inventory /var/lib/jenkins/workspace/terr/ansible"
@@ -52,7 +52,7 @@ pipeline {
         stage('Wait for Instance to be Ready') {
             steps {
                 echo 'Waiting for EC2 Instance to be ready...'
-                sleep time: 100, unit: 'SECONDS' // ينتظر 60 ثانية
+                sleep time: 100, unit: 'SECONDS' 
                 echo 'Sleep complete. Proceeding to Ansible execution.'
             }
         }
@@ -62,7 +62,7 @@ pipeline {
                 dir('ansible') {
                     sh 'chmod 600 ${ANSIBLE_PRIVATE_KEY}'
                     sh 'ansible-inventory -i inventory --list'
-                    ansiblePlaybook inventory: 'inventory', playbook: 'playbook.yml', credentialsId: 'ansible-ssh-key', extras: "-u ubuntu --private-key=/var/lib/jenkins/workspace/terr/ansible/ansible-keyproj.pem"
+                    ansiblePlaybook inventory: 'inventory', playbook: 'playbook.yml', extras: "-u ubuntu --private-key=/var/lib/jenkins/workspace/terr/ansible/ansible-keyproj.pem"
                 }
             }
         }
