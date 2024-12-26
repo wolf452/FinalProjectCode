@@ -16,65 +16,28 @@ pipeline {
             }
         }
 
-        stage('Configure AWS CLI') {
-            steps {
-                script {
-                    sh 'aws configure set aws_access_key_id ${TF_VAR_AWS_ACCESS_KEY}'
-                    sh 'aws configure set aws_secret_access_key ${TF_VAR_AWS_SECRET_KEY}'
-                    sh 'aws configure set region ${AWS_DEFAULT_REGION}'
-                }
-            }
-        }
-
-        stage('Terraform Init') {
+        stage('Terraform Apply and Get EC2 IP') {
             steps {
                 dir('terraform') {
                     sh 'terraform init'
-                }
-            }
-        }
-
-        stage('Terraform Apply') {
-            steps {
-                dir('terraform') {
                     script {
                         def applyResult = sh(script: 'terraform apply -auto-approve', returnStatus: true)
-                        if (applyResult != 0) {
-                            error "Terraform apply failed"
-                        }
-                    }
-                }
-            }
-        }
+                        if (applyResult != 0) error "Terraform apply failed"
 
-        stage('Get EC2 IP') {
-            steps {
-                dir('terraform') {
-                    script {
                         def terraformOutput = sh(script: 'terraform output -json', returnStdout: true).trim()
                         def outputJson = readJSON(text: terraformOutput)
                         def publicIp = outputJson?.ec2_public_ips?.value
 
-                        if (!publicIp) {
-                            error "EC2 public IP not found in Terraform output."
-                        }
+                        if (!publicIp) error "EC2 public IP not found in Terraform output."
 
                         echo "EC2 Public IP: ${publicIp}"
 
                         dir('ansible') {
                             writeFile file: 'inventory', text: "[web]\n${publicIp} ansible_user=ubuntu ansible_ssh_private_key_file=/var/lib/jenkins/workspace/terr/ansible/ansible-keyproj.pem"
+                            echo "Inventory content:"
+                            sh 'cat inventory'
                         }
                     }
-                }
-            }
-        }
-
-        stage('Delay Before Ansible Playbook') {
-            steps {
-                script {
-                    echo "Waiting for 1 minute before proceeding..."
-                    sleep time: 60, unit: 'SECONDS'
-                    echo "Proceeding to run Ansible playbook..."
                 }
             }
         }
@@ -83,6 +46,7 @@ pipeline {
             steps {
                 dir('ansible') {
                     sh 'chmod 600 /var/lib/jenkins/workspace/terr/ansible/ansible-keyproj.pem'
+                    sh 'ansible-inventory -i inventory --list'
                     ansiblePlaybook credentialsId: 'ansible-ssh-key', inventory: 'inventory', playbook: 'playbook.yml'
                 }
             }
@@ -91,7 +55,7 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: 'ansible/inventory, terraform/terraform.tfstate', fingerprint: true
+            archiveArtifacts artifacts: '**/ansible/inventory, terraform/terraform.tfstate', fingerprint: true
             cleanWs()
         }
     }
