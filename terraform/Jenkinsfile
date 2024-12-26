@@ -14,7 +14,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                 git branch: 'main', url: 'https://github.com/wolf452/FinalProjectCode.git'
+                git branch: 'main', url: 'https://github.com/wolf452/FinalProjectCode.git'
             }
         }
 
@@ -67,9 +67,11 @@ pipeline {
 
         stage('Update Ansible Inventory') {
             steps {
-                script {
-                    def inventoryContent = "[ec2]\n${env.PUBLIC_IP} ansible_user=ubuntu\n"
-                    writeFile file: "${env.ANSIBLE_DIR}/${env.INVENTORY_FILE}", text: inventoryContent
+                dir("${ANSIBLE_DIR}") {
+                    script {
+                        def inventoryContent = "[ec2]\n${env.PUBLIC_IP} ansible_user=ubuntu\n"
+                        writeFile file: "${env.ANSIBLE_DIR}/${env.INVENTORY_FILE}", text: inventoryContent
+                    }
                 }
             }
         }
@@ -96,7 +98,7 @@ pipeline {
                             ansible-playbook -K -i ${INVENTORY_FILE} playbook.yml --private-key $SSH_PRIVATE_KEY
                             '''
                         }
-                    }     
+                    }
                 }
             }
         }
