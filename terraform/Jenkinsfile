@@ -6,8 +6,8 @@ pipeline {
         BACKEND_DIR = 'terraform'
         ANSIBLE_DIR = '../terr/ansible'
         INVENTORY_FILE = 'inventory'
-        AWS_ACCESS_KEY_ID = credentials('aws-access-key')  // Use the correct credentials
-        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')  // Use the correct credentials
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key')  // استخدام بيانات الاعتماد الصحيحة
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')  // استخدام بيانات الاعتماد الصحيحة
         AWS_REGION = 'us-east-1'
     }
 
@@ -20,7 +20,7 @@ pipeline {
 
         stage('Terraform Init') {
             steps {
-                dir("${env.TERRAFORM_DIR}") {
+                dir("${TERRAFORM_DIR}") {
                     withCredentials([aws(credentialsId: 'aws-cred')]) {
                         script {
                             env.TF_VAR_AWS_ACCESS_KEY = env.AWS_ACCESS_KEY_ID
@@ -34,7 +34,7 @@ pipeline {
 
         stage('Terraform Apply') {
             steps {
-                dir("${env.TERRAFORM_DIR}") {
+                dir("${TERRAFORM_DIR}") {
                     sh 'terraform apply -auto-approve'
                 }
             }
@@ -42,7 +42,7 @@ pipeline {
 
         stage('Backend Terraform Init') {
             steps {
-                dir("${env.BACKEND_DIR}") {
+                dir("${BACKEND_DIR}") {
                     sh 'terraform init'
                 }
             }
@@ -50,7 +50,7 @@ pipeline {
 
         stage('Backend Terraform Apply') {
             steps {
-                dir("${env.BACKEND_DIR}") {
+                dir("${BACKEND_DIR}") {
                     sh 'terraform apply -auto-approve'
                 }
             }
@@ -59,10 +59,8 @@ pipeline {
         stage('Get Public IP') {
             steps {
                 script {
-                    // استخدام المخرج الصحيح الذي هو "ec2_public_ips"
-                    env.PUBLIC_IP = sh(script: "cd ${env.TERRAFORM_DIR} && terraform output -raw ec2_public_ips", returnStdout: true).trim()
+                    env.PUBLIC_IP = sh(script: "cd ${TERRAFORM_DIR} && terraform output -raw ec2_public_ips", returnStdout: true).trim()
 
-                    // تحقق من أن المخرج ليس فارغًا
                     if (env.PUBLIC_IP) {
                         echo "Public IP: ${env.PUBLIC_IP}"
                     } else {
@@ -76,9 +74,8 @@ pipeline {
             steps {
                 dir("${ANSIBLE_DIR}") {
                     script {
-                        // تحديث محتوى ملف inventory باستخدام عنوان الـ IP العام الذي تم الحصول عليه
                         def inventoryContent = "[ec2]\n${env.PUBLIC_IP} ansible_user=ubuntu ansible_ssh_private_key_file=./ivolve.pem\n"
-                        writeFile file: "${env.INVENTORY_FILE}", text: inventoryContent
+                        writeFile file: "${INVENTORY_FILE}", text: inventoryContent
                     }
                 }
             }
@@ -88,22 +85,21 @@ pipeline {
             steps {
                 script {
                     echo "Waiting for 1 minute before proceeding..."
-                    sleep time: 5, unit: 'SECONDS'
+                    sleep time: 1, unit: 'MINUTES'
                     echo "Proceeding to run Ansible playbook..."
                 }
             }
         }
 
-        stage('Run Ansible Playbook') {
+        stage('Run Ansible') {
             steps {
                 dir("${ANSIBLE_DIR}") {
-                    script {
-                        // Ensure the key has the correct permissions
-                        // Run the Ansible playbook
-                        sh '''
-                        ansible-playbook -K -i inventory playbook.yml
-                        '''
-                    }
+                    ansiblePlaybook(
+                        credentialsId: 'ansible-ssh-key',
+                        inventory: "${INVENTORY_FILE}",
+                        playbook: 'playbook.yml',
+                        extras: '-e "ansible_ssh_extra_args=\'-o StrictHostKeyChecking=no\'"'
+                    )
                 }
             }
         }
