@@ -2,29 +2,36 @@ pipeline {
     agent any
 
     environment {
-        ANSIBLE_DIR = 'ansible'
-        AWS_ACCESS_KEY_ID = credentials('aws-access-key')  // Use the correct credentials
-        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')  // Use the correct credentials
-        AWS_REGION = 'us-east-1'
-          // Define the path to your private key file
+        ANSIBLE_DIR = 'ansible' // مسار ملفات أنسبل
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key') // بيانات الاعتماد للوصول إلى AWS
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key') // بيانات الاعتماد للوصول إلى AWS
+        AWS_REGION = 'us-east-1' // تحديد منطقة AWS
+        PRIVATE_KEY_FILE = './ivolve.pem' // مسار مفتاح SSH الخاص
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout Code') { // مرحلة جلب الكود من Git
             steps {
                 git branch: 'main', url: 'https://github.com/wolf452/FinalProjectCode.git'
             }
         }
-        stage('Run Ansible Playbook') {
+        stage('Run Ansible Playbook') { // مرحلة تشغيل Playbook
             steps {
-                dir("${ANSIBLE_DIR}") {
+                dir("${ANSIBLE_DIR}") { // الانتقال إلى دليل الأنسبل
                     script {
-                        // Ensure the key has the correct permissions
-                        
-                        // Run the Ansible playbook
+                        // إنشاء ملف الـ Inventory
                         sh '''
-                        ansible-playbook -i inventory playbook.yml
+                        cat > inventory <<EOL
+[ec2]
+54.211.111.150 ansible_user=ubuntu ansible_ssh_private_key_file=${PRIVATE_KEY_FILE}
+EOL
                         '''
+
+                        // تعديل صلاحيات مفتاح SSH
+                        sh 'chmod 400 ${PRIVATE_KEY_FILE}'
+
+                        // تشغيل الـ Playbook
+                        sh 'ansible-playbook -i inventory playbook.yml'
                     }
                 }
             }
