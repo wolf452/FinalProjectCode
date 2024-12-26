@@ -103,7 +103,7 @@ pipeline {
                             sh 'chmod 400 $SSH_PRIVATE_KEY'
                             // Run the Ansible playbook
                             sh '''
-                            ansible-playbook -K -i ${INVENTORY_FILE} playbook.yml --private-key=./ivolve.pem
+                            ansible-playbook -K -i ${INVENTORY_FILE} playbook.yml --private-key=/var/lib/jenkins/workspace/terr/ansible/ivolve.pem --user=ubuntu
                             '''
                         }
                     }
