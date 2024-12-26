@@ -2,11 +2,11 @@ pipeline {
     agent any
 
     environment {
-       
         ANSIBLE_DIR = 'terr/ansible'
         AWS_ACCESS_KEY_ID = credentials('aws-access-key')  // Use the correct credentials
         AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')  // Use the correct credentials
         AWS_REGION = 'us-east-1'
+        FILE = 'path/to/private-key-file'  // Define the path to your private key file
     }
 
     stages {
@@ -14,19 +14,17 @@ pipeline {
             steps {
                 git branch: 'main', url: 'https://github.com/wolf452/FinalProjectCode.git'
             }
-       
-    stage('Run Ansible Playbook') {
-        steps {
-             dir("${ANSIBLE_DIR}") {
-                     
-                        script {
-                            // Ensure the key has the correct permissions
-                            sh 'chmod 400 $FILE'
-                            // Run the Ansible playbook
-                            sh '''
-                            ansible-playbook -K -i inventory playbook.yml  
-                            '''
-                        }
+        }
+        stage('Run Ansible Playbook') {
+            steps {
+                dir("${ANSIBLE_DIR}") {
+                    script {
+                        // Ensure the key has the correct permissions
+                        sh 'chmod 400 $FILE'
+                        // Run the Ansible playbook
+                        sh '''
+                        ansible-playbook -i inventory playbook.yml
+                        '''
                     }
                 }
             }
