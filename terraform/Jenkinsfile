@@ -59,8 +59,15 @@ pipeline {
         stage('Get Public IP') {
             steps {
                 script {
-                    env.PUBLIC_IP = sh(script: "cd ${env.TERRAFORM_DIR} && terraform output -raw public_ip", returnStdout: true).trim()
-                    echo "Public IP: ${env.PUBLIC_IP}"
+                    // استخدام المخرج الصحيح الذي هو "ec2_public_ips"
+                    env.PUBLIC_IP = sh(script: "cd ${env.TERRAFORM_DIR} && terraform output -raw ec2_public_ips", returnStdout: true).trim()
+                    
+                    // تحقق من أن المخرج ليس فارغًا
+                    if (env.PUBLIC_IP) {
+                        echo "Public IP: ${env.PUBLIC_IP}"
+                    } else {
+                        error "Public IP output not found in Terraform state"
+                    }
                 }
             }
         }
@@ -69,6 +76,7 @@ pipeline {
             steps {
                 dir("${ANSIBLE_DIR}") {
                     script {
+                        // تحديث ملف inventroy باستخدام عنوان الـ IP العام
                         def inventoryContent = "[ec2]\n${env.PUBLIC_IP} ansible_user=ubuntu\n"
                         writeFile file: "${env.ANSIBLE_DIR}/${env.INVENTORY_FILE}", text: inventoryContent
                     }
