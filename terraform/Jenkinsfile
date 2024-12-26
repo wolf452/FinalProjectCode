@@ -20,7 +20,7 @@ pipeline {
                 dir("${ANSIBLE_DIR}") {
                     script {
                         // Ensure the key has the correct permissions
-                        sh 'chmod 400 ./ivolve.pem'
+                        
                         // Run the Ansible playbook
                         sh '''
                         ansible-playbook -i inventory playbook.yml
