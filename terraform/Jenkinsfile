@@ -89,7 +89,7 @@ pipeline {
             steps {
                 dir('ansible') {
                     // Run the Ansible playbook using the generated inventory
-                    sh "mv /var/lib/jenkins/workspace/terr/terraform/ansible/inventory /var/lib/jenkins/workspace/terr/ansible"
+                   
                     ansiblePlaybook credentialsId: 'ansible-ssh-key', inventory: 'inventory', playbook: 'playbook.yml'
                 }
             }
