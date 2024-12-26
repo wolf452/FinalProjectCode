@@ -6,8 +6,8 @@ pipeline {
         BACKEND_DIR = 'terraform'
         ANSIBLE_DIR = '../ansible'
         INVENTORY_FILE = 'inventory'
-        AWS_ACCESS_KEY_ID = credentials('aws-access-key')  // استخدام بيانات الاعتماد الصحيحة
-        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')  // استخدام بيانات الاعتماد الصحيحة
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key')  
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')  
         AWS_REGION = 'us-east-1'
     }
 
@@ -32,18 +32,18 @@ pipeline {
             }
         }
 
-        stage('Terraform Apply') {
+        stage('Terraform Plan') {
             steps {
                 dir("${TERRAFORM_DIR}") {
-                    sh 'terraform apply -auto-approve'
+                    sh 'terraform plan'
                 }
             }
         }
 
-        stage('Backend Terraform Init') {
+        stage('Terraform Apply') {
             steps {
-                dir("${BACKEND_DIR}") {
-                    sh 'terraform init'
+                dir("${TERRAFORM_DIR}") {
+                    sh 'terraform apply -auto-approve'
                 }
             }
         }
