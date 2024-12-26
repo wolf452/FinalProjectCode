@@ -22,6 +22,9 @@ pipeline {
                     sh 'terraform init'
                     sh 'terraform apply -auto-approve'
 
+                    // Refresh Terraform state to ensure outputs are accurate
+                    sh 'terraform refresh'
+
                     script {
                         // Capture Terraform output
                         def terraformOutput = sh(script: 'terraform output -json', returnStdout: true).trim()
