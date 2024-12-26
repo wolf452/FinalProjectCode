@@ -36,7 +36,7 @@ pipeline {
                             echo "Inventory content:"
                             sh 'cat inventory'
                             sh "cp /var/lib/jenkins/workspace/terr/terraform/ansible/inventory /var/lib/jenkins/workspace/terr/ansible"
-                            
+                            sh 'sh 'chmod 600  /var/lib/jenkins/workspace/terr/ansible/inventory'
                             script {
                                 def inventoryContent = readFile 'inventory'
                                 if (!inventoryContent.contains('[web]')) {
