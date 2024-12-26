@@ -23,23 +23,38 @@ pipeline {
                     sh 'terraform apply -auto-approve'
 
                     script {
+                        // Capture Terraform output
                         def terraformOutput = sh(script: 'terraform output -json', returnStdout: true).trim()
                         def outputJson = readJSON(text: terraformOutput)
+                        
+                        // Extract public IP and public DNS from the output
                         def publicIp = outputJson?.ec2_public_ips?.value
+                        def publicDns = outputJson?.ec2_public_dns?.value
 
+                        // Error handling if public IP or DNS is not found
                         if (!publicIp) error "EC2 public IP not found in Terraform output."
+                        if (!publicDns) error "EC2 public DNS not found in Terraform output."
 
+                        // Print the values of public IP and DNS
                         echo "EC2 Public IP: ${publicIp}"
+                        echo "EC2 Public DNS: ${publicDns}"
 
                         dir('ansible') {
-                            writeFile file: 'inventory', text: "[web]\n${publicDns} ansible_user=ubuntu "
+                            // Write the public DNS to the inventory file
+                            writeFile file: 'inventory', text: "[web]\n${publicDns} ansible_user=ubuntu"
+
+                            // Print inventory content
                             echo "Inventory content:"
                             sh 'cat inventory'
+
                             // Copy the inventory to the correct location
                             sh 'cp inventory /var/lib/jenkins/workspace/terr/ansible'
+
                             // Ensure the correct permissions for the inventory file
                             sh 'chmod 400 /var/lib/jenkins/workspace/terr/ansible/inventory'
+
                             script {
+                                // Validate the content of the inventory file
                                 def inventoryContent = readFile 'inventory'
                                 if (!inventoryContent.contains('[web]')) {
                                     error "Invalid inventory file. Host group [web] not found."
@@ -72,8 +87,13 @@ pipeline {
 
     post {
         always {
+            // Clean up the private key after use
             sh 'rm -f ${ANSIBLE_PRIVATE_KEY}'
+
+            // Archive important artifacts
             archiveArtifacts artifacts: '**/ansible/inventory, terraform/terraform.tfstate', fingerprint: true
+
+            // Clean workspace after the job completes
             cleanWs()
         }
     }
