@@ -1,45 +1,92 @@
 pipeline {
     agent any
 
-    stages {
-        stage('Checkout Code') {
-            steps {
-                git branch: 'main', url: 'https://github.com/wolf452/FinalProjectCode.git'
-            }
-        }
-
-        stage('Terraform Init') {
-            steps {
-                dir('terraform') {
-                    withCredentials([aws(credentialsId: 'aws-cred', region: 'us-east-1')]) {
-                        script {
-                            env.TF_VAR_AWS_ACCESS_KEY = env.AWS_ACCESS_KEY_ID
-                            env.TF_VAR_AWS_SECRET_KEY = env.AWS_SECRET_ACCESS_KEY
-                            env.TF_VAR_ANSIBLE_PRIVATE_KEY = credentials('ansible-ssh-key')
-
-                            // Run Terraform Init
-                            sh 'terraform init'
-                        }
-                    }
-                }
-            }
-        }
-
-        stage('Run Ansible') {
-            steps {
-                dir('/var/lib/jenkins/workspace/terr/ansible') {
-                    // Ensure that ansible-playbook command is running correctly
-                    sh 'ansible-playbook -i /var/lib/jenkins/workspace/terr/ansible/inventory playbook.yml'
-                }
-            }
-        }
+    environment {
+        TERRAFORM_DIR = 'terraform'
+        BACKEND_DIR = 'terraform/modules/backend'
+        ANSIBLE_DIR = 'ansible'
+        INVENTORY_FILE = 'inventory'
+        AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+        AWS_REGION = 'us-east-1'
     }
 
-    post {
-        always {
-            // Archive inventory and terraform state files
-            archiveArtifacts artifacts: '**/ansible/inventory, **/terraform/terraform.tfstate', fingerprint: true
-            cleanWs()  // Clean workspace after execution
+    stages {
+        stage('Terraform Init') {
+            steps {
+                dir("${env.TERRAFORM_DIR}") {
+                    sh 'terraform init -force-copy'
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                dir("${env.TERRAFORM_DIR}") {
+                    sh 'terraform apply -auto-approve'
+                }
+            }
+        }
+
+        stage('Backend Terraform Init') {
+            steps {
+                dir("${env.BACKEND_DIR}") {
+                    sh 'terraform init'
+                }
+            }
+        }
+
+        stage('Backend Terraform Apply') {
+            steps {
+                dir("${env.BACKEND_DIR}") {
+                    sh 'terraform apply -auto-approve'
+                }
+            }
+        }
+
+        stage('Get Public IP') {
+            steps {
+                script {
+                    env.PUBLIC_IP = sh(script: "cd ${env.TERRAFORM_DIR} && terraform output -raw public_ip", returnStdout: true).trim()
+                    echo "Public IP: ${env.PUBLIC_IP}"
+                }
+            }
+        }
+
+        stage('Update Ansible Inventory') {
+            steps {
+                script {
+                    def inventoryContent = "[ec2]\n${env.PUBLIC_IP} ansible_user=ubuntu\n"
+                    writeFile file: "${env.ANSIBLE_DIR}/${env.INVENTORY_FILE}", text: inventoryContent
+                }
+            }
+        }
+
+        stage('Delay Before Ansible Playbook') {
+            steps {
+                script {
+                    echo "Waiting for 1 minute before proceeding..."
+                    sleep time: 5, unit: 'SECONDS'
+                    echo "Proceeding to run Ansible playbook..."
+                }
+            }
+        }
+        
+        stage('Run Ansible Playbook') {
+            steps {
+                dir("${ANSIBLE_DIR}") {
+                    withCredentials([sshUserPrivateKey(credentialsId: 'ansible-ssh-key', keyFileVariable: 'SSH_PRIVATE_KEY')]) {
+                        script {
+                            // Ensure the key has the correct permissions
+                            sh 'chmod 400 $SSH_PRIVATE_KEY'
+                            // Run the Ansible playbook
+                            sh '''
+                            ansible-playbook -K -i ${INVENTORY_FILE} playbook.yml --private-key $SSH_PRIVATE_KEY
+                            '''
+                        }
+                    }     
+                }
+            }
         }
     }
 }
