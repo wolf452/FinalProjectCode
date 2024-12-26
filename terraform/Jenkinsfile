@@ -32,7 +32,7 @@ pipeline {
                         echo "EC2 Public IP: ${publicIp}"
 
                         dir('ansible') {
-                            writeFile file: 'inventory', text: "[web]\n${publicIp} ansible_user=ubuntu "
+                            writeFile file: 'inventory', text: "[web]\n${publicDns} ansible_user=ubuntu "
                             echo "Inventory content:"
                             sh 'cat inventory'
                             // Copy the inventory to the correct location
