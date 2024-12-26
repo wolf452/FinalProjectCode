@@ -2,36 +2,107 @@ pipeline {
     agent any
 
     environment {
-        ANSIBLE_DIR = 'ansible' // مسار ملفات أنسبل
-        AWS_ACCESS_KEY_ID = credentials('aws-access-key') // بيانات الاعتماد للوصول إلى AWS
-        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key') // بيانات الاعتماد للوصول إلى AWS
-        AWS_REGION = 'us-east-1' // تحديد منطقة AWS
-        PRIVATE_KEY_FILE = './ivolve.pem' // مسار مفتاح SSH الخاص
+        TERRAFORM_DIR = 'terraform'
+        BACKEND_DIR = 'terraform'
+        ANSIBLE_DIR = '../terr/ansible'
+        INVENTORY_FILE = 'inventory'
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key')  // Use the correct credentials
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')  // Use the correct credentials
+        AWS_REGION = 'us-east-1'
     }
 
     stages {
-        stage('Checkout Code') { // مرحلة جلب الكود من Git
+        stage('Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/wolf452/FinalProjectCode.git'
             }
         }
-        stage('Run Ansible Playbook') { // مرحلة تشغيل Playbook
+
+        stage('Terraform Init') {
             steps {
-                dir("${ANSIBLE_DIR}") { // الانتقال إلى دليل الأنسبل
+                dir("${env.TERRAFORM_DIR}") {
+                    withCredentials([aws(credentialsId: 'aws-cred')]) {
+                        script {
+                            env.TF_VAR_AWS_ACCESS_KEY = env.AWS_ACCESS_KEY_ID
+                            env.TF_VAR_AWS_SECRET_KEY = env.AWS_SECRET_ACCESS_KEY
+                        }
+                        sh 'terraform init -force-copy'
+                    }
+                }
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                dir("${env.TERRAFORM_DIR}") {
+                    sh 'terraform apply -auto-approve'
+                }
+            }
+        }
+
+        stage('Backend Terraform Init') {
+            steps {
+                dir("${env.BACKEND_DIR}") {
+                    sh 'terraform init'
+                }
+            }
+        }
+
+        stage('Backend Terraform Apply') {
+            steps {
+                dir("${env.BACKEND_DIR}") {
+                    sh 'terraform apply -auto-approve'
+                }
+            }
+        }
+
+        stage('Get Public IP') {
+            steps {
+                script {
+                    // استخدام المخرج الصحيح الذي هو "ec2_public_ips"
+                    env.PUBLIC_IP = sh(script: "cd ${env.TERRAFORM_DIR} && terraform output -raw ec2_public_ips", returnStdout: true).trim()
+
+                    // تحقق من أن المخرج ليس فارغًا
+                    if (env.PUBLIC_IP) {
+                        echo "Public IP: ${env.PUBLIC_IP}"
+                    } else {
+                        error "Public IP output not found in Terraform state"
+                    }
+                }
+            }
+        }
+
+        stage('Update Ansible Inventory') {
+            steps {
+                dir("${ANSIBLE_DIR}") {
                     script {
-                        // إنشاء ملف الـ Inventory
+                        // تحديث محتوى ملف inventory باستخدام عنوان الـ IP العام الذي تم الحصول عليه
+                        def inventoryContent = "[ec2]\n${env.PUBLIC_IP} ansible_user=ubuntu ansible_ssh_private_key_file=./ivolve.pem\n"
+                        writeFile file: "${env.INVENTORY_FILE}", text: inventoryContent
+                    }
+                }
+            }
+        }
+
+        stage('Delay Before Ansible Playbook') {
+            steps {
+                script {
+                    echo "Waiting for 1 minute before proceeding..."
+                    sleep time: 60, unit: 'SECONDS'
+                    echo "Proceeding to run Ansible playbook..."
+                }
+            }
+        }
+
+        stage('Run Ansible Playbook') {
+            steps {
+                dir("${ANSIBLE_DIR}") {
+                    script {
+                        // Ensure the key has the correct permissions
+                        // Run the Ansible playbook
                         sh '''
-                        cat > inventory <<EOL
-[ec2]
-3.92.196.95 ansible_user=ubuntu ansible_ssh_private_key_file=${PRIVATE_KEY_FILE}
-EOL
+                        ansible-playbook -K -i inventory playbook.yml
                         '''
-
-                        // تعديل صلاحيات مفتاح SSH
-                        sh 'chmod 400 ${PRIVATE_KEY_FILE}'
-
-                        // تشغيل الـ Playbook
-                        sh 'ansible-playbook -i inventory playbook.yml'
                     }
                 }
             }
