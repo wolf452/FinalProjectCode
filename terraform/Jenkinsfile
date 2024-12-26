@@ -103,7 +103,7 @@ pipeline {
                             sh 'chmod 400 $FILE'
                             // Run the Ansible playbook
                             sh '''
-                            ansible-playbook -K -i ${INVENTORY_FILE} playbook.yml --private-key $FILE --user=ubuntu
+                            ansible-playbook -K -i ${INVENTORY_FILE} playbook.yml --private-key=$FILE --user=ubuntu
                             '''
                         }
                     }
