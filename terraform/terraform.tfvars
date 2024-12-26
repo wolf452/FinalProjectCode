@@ -1,5 +1,5 @@
 region              = "us-east-1"
-s3_bucket_name      = "jenk-buckett"
+s3_bucket_name      = "bucket-last1"
 dynamodb_table_name = "ivolvegp-table"
 vpc_name            = "ivolve"
 vpc_cidr            = "10.0.0.0/16"
