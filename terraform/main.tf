@@ -50,11 +50,3 @@ module "cloudwatch" {
   log_stream_name = var.cloudwatch_log_stream
   cloudwatch_config_ssm_key = var.cloudwatch_config_ssm_key
 }
-resource "local_file" "ansible_inventory" {
-  content = <<-EOT
-    [slave]
-    ${module.ec2_instance.public_ip} ansible_ssh_user=ubuntu ansible_user=ubuntu ansible_ssh_private_key_file=/home/ahmed/ivolve.pem
-
-  EOT
-  filename = "../ansible/inventory"
-}
