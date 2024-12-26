@@ -68,7 +68,7 @@ pipeline {
 
                         // Prepare the Ansible inventory file with the EC2 instance IP and SSH private key
                         dir('ansible') {
-                            writeFile file: 'inventory', text: "[web]\n${publicIp} ansible_user=ubuntu ansible_ssh_private_key_file=${env.ANSIBLE_PRIVATE_KEY}"
+                            writeFile file: 'inventory', text: "[web]\n${publicIp} ansible_user=ubuntu ansible_ssh_private_key_file=/var/lib/jenkins/workspace/terr/ansible/ansible-keyproj.pem"
                         }
                     }
                 }
@@ -89,7 +89,7 @@ pipeline {
             steps {
                 dir('ansible') {
                     // Run the Ansible playbook using the generated inventory
-                   
+                   sh "mv /var/lib/jenkins/workspace/terr/terraform/ansible/inventory  /var/lib/jenkins/workspace/terr/ansible"
                     ansiblePlaybook credentialsId: 'ansible-ssh-key', inventory: 'inventory', playbook: 'playbook.yml'
                 }
             }
