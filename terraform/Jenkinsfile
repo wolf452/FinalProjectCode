@@ -97,7 +97,7 @@ pipeline {
         stage('Run Ansible Playbook') {
             steps {
                 dir("${ANSIBLE_DIR}") {
-                     withCredentials([file(credentialsId: 'privat', variable: 'FILE')] {
+                     withCredentials([file(credentialsId: 'privat', variable: 'FILE')]) {
                         script {
                             // Ensure the key has the correct permissions
                             sh 'chmod 400 $FILE'
