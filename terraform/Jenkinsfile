@@ -4,10 +4,10 @@ pipeline {
     environment {
         TERRAFORM_DIR = 'terraform'
         BACKEND_DIR = 'terraform/modules/backend'
-        ANSIBLE_DIR = 'ansible'
+        ANSIBLE_DIR = 'terr/ansible'
         INVENTORY_FILE = 'inventory'
-        AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
-        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+        AWS_ACCESS_KEY_ID = credentials('aws-access-key')
+        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')
         AWS_REGION = 'us-east-1'
     }
 
@@ -15,6 +15,11 @@ pipeline {
         stage('Terraform Init') {
             steps {
                 dir("${env.TERRAFORM_DIR}") {
+                    withCredentials([aws(credentialsId: 'aws-cred', region: 'us-east-1')]) {
+                        script {
+                            env.TF_VAR_AWS_ACCESS_KEY = env.aws-access-key
+                            env.TF_VAR_AWS_SECRET_KEY = env.aws-secret-key
+                            
                     sh 'terraform init -force-copy'
                 }
             }
