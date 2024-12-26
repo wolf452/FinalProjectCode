@@ -53,8 +53,8 @@ module "cloudwatch" {
 resource "local_file" "ansible_inventory" {
   content = <<-EOT
     [slave]
-    ${module.ec2_instance.public_ip} ansible_ssh_user=ubuntu ansible_user=ubuntu ansible_ssh_private_key_file=/var/lib/jenkins/workspace/terr/ansible/ansible-keyproj.pem
+    ${module.ec2_instance.public_ip} ansible_ssh_user=ubuntu ansible_user=ubuntu ansible_ssh_private_key_file=/home/ahmed/ivolve.pem
 
   EOT
-  filename = "../var/lib/jenkins/terr/ansible/inventory"
+  filename = "../ansible/inventory"
 }
