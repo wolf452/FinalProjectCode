@@ -88,7 +88,7 @@ pipeline {
             steps {
                 dir("${ANSIBLE_DIR}") {
                     ansiblePlaybook(
-                        credentialsId: 'ansible-ssh-key',
+                        credentialsId: 'ansible-ssh',
                         inventory: "${INVENTORY_FILE}",
                         playbook: 'playbook.yml',
                         extras: '-e "ansible_ssh_extra_args=\'-o StrictHostKeyChecking=no\'"'
