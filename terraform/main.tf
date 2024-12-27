@@ -54,7 +54,7 @@ module "cloudwatch" {
 resource "local_file" "ansible_inventory" {
   content = <<-EOT
     [slave]
-    ${module.ec2_instance.public_ip} ansible_ssh_user=ec2-ubuntu 
+    ${module.ec2_instance.public_ip} ansible_ssh_user=ubuntu 
   EOT
   filename = "../ansible/inventory"
 }
