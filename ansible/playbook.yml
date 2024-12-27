@@ -1,5 +1,5 @@
 - name: Configure Ubuntu EC2 Instance
-  hosts: ec2
+  hosts: slave
   become: true
   roles:
     #- git
