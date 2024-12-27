@@ -49,31 +49,7 @@ pipeline {
         }
 
         
-        stage('Get Public IP') {
-            steps {
-                script {
-                    env.PUBLIC_IP = sh(script: "cd ${TERRAFORM_DIR} && terraform output -raw ec2_public_ips", returnStdout: true).trim()
-
-                    if (env.PUBLIC_IP) {
-                        echo "Public IP: ${env.PUBLIC_IP}"
-                    } else {
-                        error "Public IP output not found in Terraform state"
-                    }
-                }
-            }
-        }
-
-        stage('Update Ansible Inventory') {
-            steps {
-                dir("${ANSIBLE_DIR}") {
-                    script {
-                        def inventoryContent = "[ec2]\n${env.PUBLIC_IP} ansible_user=ubuntu ansible_ssh_private_key_file=./ivolve.pem\n"
-                        writeFile file: "${INVENTORY_FILE}", text: inventoryContent
-                    }
-                }
-            }
-        }
-
+     
         stage('Delay Before Ansible Playbook') {
             steps {
                 script {
