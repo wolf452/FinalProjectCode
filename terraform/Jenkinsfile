@@ -48,14 +48,7 @@ pipeline {
             }
         }
 
-        stage('Backend Terraform Apply') {
-            steps {
-                dir("${BACKEND_DIR}") {
-                    sh 'terraform apply -auto-approve'
-                }
-            }
-        }
-
+        
         stage('Get Public IP') {
             steps {
                 script {
